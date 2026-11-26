@@ -44,7 +44,7 @@ class BookFile(models.Model):
         EPUB = 'epub', 'EPUB'
 
     book_info = models.ForeignKey(BookInfo, related_name='book_files', on_delete=models.CASCADE)
-    format = models.CharField(choices=Format.choices)
+    format = models.CharField(max_length=10, choices=Format.choices)
     size = models.PositiveIntegerField(default=0)
     file = models.FileField(upload_to='books/%Y')
 

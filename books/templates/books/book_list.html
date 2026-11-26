@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Library Catalog</title>
+</head>
+<body>
+    <h1>All Books</h1>
+
+    <div class="book-grid">
+        {% for book in books %}
+            <div class="book-card">
+                {% if book.cover %}
+                    <img src="{{ book.cover.url }}" alt="{{ book.title }}">
+                {% endif %}
+                
+                <h3><a href="{% url 'book-detail-html' book.slug %}">{{ book.title }}</a></h3>
+                
+                <p><em>{{ book.authors|join:", " }}</em></p>
+                <p>{{ book.published }}</p>
+            </div>
+        {% empty %}
+            <p>No books found.</p>
+        {% endfor %}
+    </div>
+
+    <div class="pagination">
+        {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}">Previous</a>
+        {% endif %}
+
+        <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}">Next</a>
+        {% endif %}
+    </div>
+
+</body>
+</html>

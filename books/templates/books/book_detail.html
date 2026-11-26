@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ book.title }}</title>
+</head>
+<body>
+
+    <h1>{{ book.title }}</h1>
+    <img src="{{ book.cover.url }}" alt="{{ book.title }}" width="200">
+    <p>{{ book.description }}</p>
+    
+    <h3>Download:</h3>
+    {% for file in book.book_files.all %}
+        <a href="{{ file.file.url }}" download>Download {{ file.format|upper }}</a>
+    {% endfor %}
+    <hr>
+
+    <h3>Comments</h3>
+    <div id="comments-container">
+        {% for comment in comments %}
+            <div class="comment-box" style="margin-bottom: 10px; border-bottom: 1px solid #ccc;">
+                <strong>{{ comment.nickname }}</strong> 
+                <small>({{ comment.published_at|date:"d.m.Y H:i" }})</small>
+                <p>{{ comment.text }}</p>
+            </div>
+        {% empty %}
+            <p id="no-comments">No comments yet. Be the first!</p>
+        {% endfor %}
+    </div>
+
+    <hr>
+    <h3>Leave a comment</h3>
+    <form id="comment-form">
+        {% csrf_token %}
+        <div>
+            <input type="text" id="nickname" placeholder="Your Name" required>
+        </div>
+        <div>
+            <input type="email" id="email" placeholder="Your Email (won't be published)" required>
+        </div>
+        <div>
+            <textarea id="text" placeholder="Your comment..." required></textarea>
+        </div>
+        <button type="submit" id="submit-btn">Submit Comment</button>
+    </form>
+
+    <script>
+        document.getElementById('comment-form').addEventListener('submit', function(event) {
+            event.preventDefault(); 
+
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.innerText = "Submitting...";
+
+            const data = {
+                nickname: document.getElementById('nickname').value,
+                email: document.getElementById('email').value,
+                text: document.getElementById('text').value
+            };
+
+            fetch('/api/books/{{ book.slug }}/comments/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                }
+                throw new Error('Network response was not ok.');
+            })
+            .then(newComment => {
+                const noComments = document.getElementById('no-comments');
+                if (noComments) noComments.remove();
+
+                const commentContainer = document.getElementById('comments-container');
+                const newDiv = document.createElement('div');
+                newDiv.className = 'comment-box';
+                newDiv.style = 'margin-bottom: 10px; border-bottom: 1px solid #ccc;';
+                
+                newDiv.innerHTML = `
+                    <strong>${data.nickname}</strong> <small>(Just now)</small>
+                    <p>${data.text}</p>
+                `;
+                
+                commentContainer.prepend(newDiv);
+
+                document.getElementById('comment-form').reset();
+                submitBtn.disabled = false;
+                submitBtn.innerText = "Submit Comment";
+                
+                alert("Comment added successfully!");
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert("Something went wrong. Check the console.");
+                submitBtn.disabled = false;
+                submitBtn.innerText = "Submit Comment";
+            });
+        });
+    </script>
+
+</body>
+</html>
