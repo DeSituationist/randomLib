@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404
 from rest_framework.generics import ListCreateAPIView
-from ..books.models import BookInfo
+from books.models import BookInfo
 from .serializers import CommentSerializer
 from .models import Comment
 

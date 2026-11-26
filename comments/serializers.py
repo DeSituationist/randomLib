@@ -3,7 +3,7 @@ from .models import Comment
 
 class CommentSerializer(serializers.ModelSerializer):
     book_title = serializers.StringRelatedField(source='book')
-    book_slug = serializers.SlugRelatedField(source='book', slug_field='slug')
+    book_slug = serializers.SlugRelatedField(source='book', slug_field='slug', read_only=True)
 
     class Meta:
         model = Comment

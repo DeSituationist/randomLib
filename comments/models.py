@@ -1,5 +1,5 @@
 from django.db import models
-from ..books.models import BookInfo
+from books.models import BookInfo
 
 # Create your models here.
 class Comment(models.Model):

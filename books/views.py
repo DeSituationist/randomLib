@@ -2,10 +2,10 @@ from django.shortcuts import render
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.renderers import TemplateHTMLRenderer
 from rest_framework.response import Response
+from comments.models import Comment
+from api.pagination import StandardBookPagination
 from .serializers import BookListSerializer, BookDetailSerializer
 from .models import BookInfo, BookFile
-from ..comments.models import Comment
-from ..api.pagination import StandardBookPagination
 
 # Create your views here.
 class BooksListView(ListAPIView):
