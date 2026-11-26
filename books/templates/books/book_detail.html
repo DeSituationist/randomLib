@@ -1,107 +1,200 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>{{ book.title }}</title>
-</head>
-<body>
+{% extends 'books/base.html' %}
 
-    <h1>{{ book.title }}</h1>
-    <img src="{{ book.cover.url }}" alt="{{ book.title }}" width="200">
-    <p>{{ book.description }}</p>
-    
-    <h3>Download:</h3>
-    {% for file in book.book_files.all %}
-        <a href="{{ file.file.url }}" download>Download {{ file.format|upper }}</a>
-    {% endfor %}
-    <hr>
+{% block title %}{{ book.title }} — Library{% endblock %}
 
-    <h3>Comments</h3>
-    <div id="comments-container">
-        {% for comment in comments %}
-            <div class="comment-box" style="margin-bottom: 10px; border-bottom: 1px solid #ccc;">
-                <strong>{{ comment.nickname }}</strong> 
-                <small>({{ comment.published_at|date:"d.m.Y H:i" }})</small>
-                <p>{{ comment.text }}</p>
-            </div>
-        {% empty %}
-            <p id="no-comments">No comments yet. Be the first!</p>
-        {% endfor %}
+{% block content %}
+<div class="page-head">
+    <div class="container py-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-2">
+                <li class="breadcrumb-item"><a href="{% url 'books_list' %}">All books</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ book.title }}</li>
+            </ol>
+        </nav>
+        <h1 class="h2 mb-0">{{ book.title }}</h1>
     </div>
+</div>
 
-    <hr>
-    <h3>Leave a comment</h3>
-    <form id="comment-form">
-        {% csrf_token %}
-        <div>
-            <input type="text" id="nickname" placeholder="Your Name" required>
+<section class="py-5">
+    <div class="container">
+        <div class="row g-5">
+
+            <div class="col-md-4 col-lg-3">
+                <div class="book-detail__cover">
+                    {% if book.cover %}
+                        <img src="{{ book.cover.url }}" alt="{{ book.title }}">
+                    {% else %}
+                        <span class="book-cover__placeholder" aria-hidden="true">{{ book.title|slice:":1" }}</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="col-md-8 col-lg-9">
+                <dl class="book-meta">
+                    <dt>Author</dt>
+                    <dd>{% for author in book.authors.all %}{{ author.name }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}</dd>
+                    {% if book.published %}
+                    <dt>Published</dt>
+                    <dd>{{ book.published }}</dd>
+                    {% endif %}
+                    {% if book.language %}
+                    <dt>Language</dt>
+                    <dd>{{ book.language }}</dd>
+                    {% endif %}
+                    <dt>Downloads</dt>
+                    <dd>{{ book.downloads }}</dd>
+                </dl>
+
+                <div class="d-flex flex-wrap gap-2 mb-4">
+                    {% for genre in book.genres.all %}
+                        <span class="tag">{{ genre.name }}</span>
+                    {% endfor %}
+                </div>
+
+                <div class="text-block mb-4">
+                    {{ book.description|linebreaks }}
+                </div>
+
+                <h2 class="section-title h4">Download</h2>
+                <div class="d-flex flex-wrap gap-2 mb-5">
+                    {% for file in book.book_files.all %}
+                        <a href="{{ file.file.url }}" download class="btn btn-outline-primary">
+                            Download {{ file.get_format_display }}
+                        </a>
+                    {% empty %}
+                        <p class="text-muted mb-0">No files available.</p>
+                    {% endfor %}
+                </div>
+
+                <h2 class="section-title h4">Comments</h2>
+                <div id="comments-container" class="mb-4">
+                    {% for comment in comments %}
+                        <div class="comment-box">
+                            <strong>{{ comment.nickname }}</strong>
+                            <small class="text-muted ms-2">{{ comment.published_at|date:"d.m.Y H:i" }}</small>
+                            <p class="mb-0 mt-1">{{ comment.text }}</p>
+                        </div>
+                    {% empty %}
+                        <p id="no-comments" class="text-muted">No comments yet. Be the first!</p>
+                    {% endfor %}
+                </div>
+
+                <form id="comment-form" class="card comment-form">
+                    <div class="card-body">
+                        {% csrf_token %}
+                        <h3 class="h6 mb-3">Leave a comment</h3>
+
+                        <div class="mb-3">
+                            <label for="nickname" class="form-label">Name</label>
+                            <input type="text" id="nickname" class="form-control" maxlength="50" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email <span class="text-muted small">(not published)</span></label>
+                            <input type="email" id="email" class="form-control" maxlength="254" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="text" class="form-label">Comment</label>
+                            <textarea id="text" class="form-control" rows="3" maxlength="200" required></textarea>
+                            <div class="form-text"><span id="char-count">0</span>/200</div>
+                        </div>
+
+                        <button type="submit" id="submit-btn" class="btn btn-primary">Submit comment</button>
+                        <div id="form-feedback" class="small mt-3" role="status" aria-live="polite"></div>
+                    </div>
+                </form>
+            </div>
         </div>
-        <div>
-            <input type="email" id="email" placeholder="Your Email (won't be published)" required>
-        </div>
-        <div>
-            <textarea id="text" placeholder="Your comment..." required></textarea>
-        </div>
-        <button type="submit" id="submit-btn">Submit Comment</button>
-    </form>
+    </div>
+</section>
+{% endblock %}
 
-    <script>
-        document.getElementById('comment-form').addEventListener('submit', function(event) {
-            event.preventDefault(); 
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    var form = document.getElementById("comment-form");
+    var list = document.getElementById("comments-container");
+    var btn = document.getElementById("submit-btn");
+    var feedback = document.getElementById("form-feedback");
+    var textInput = document.getElementById("text");
+    var counter = document.getElementById("char-count");
+    var csrf = form.querySelector("[name=csrfmiddlewaretoken]").value;
+    var url = "{% url 'book_comments' book.slug %}";
 
-            const submitBtn = document.getElementById('submit-btn');
-            submitBtn.disabled = true;
-            submitBtn.innerText = "Submitting...";
+    textInput.addEventListener("input", function () {
+        counter.textContent = textInput.value.length;
+    });
 
-            const data = {
-                nickname: document.getElementById('nickname').value,
-                email: document.getElementById('email').value,
-                text: document.getElementById('text').value
-            };
+    function buildComment(nickname, text) {
+        var box = document.createElement("div");
+        box.className = "comment-box";
 
-            fetch('/api/books/{{ book.slug }}/comments/', {
-                method: 'POST',
+        var name = document.createElement("strong");
+        name.textContent = nickname;
+
+        var when = document.createElement("small");
+        when.className = "text-muted ms-2";
+        when.textContent = "(just now)";
+
+        var body = document.createElement("p");
+        body.className = "mb-0 mt-1";
+        body.textContent = text;
+
+        box.append(name, when, body);
+        return box;
+    }
+
+    function describeErrors(data) {
+        if (!data || typeof data !== "object") return "";
+        return Object.keys(data)
+            .map(function (key) { return key + ": " + [].concat(data[key]).join(" "); })
+            .join("; ");
+    }
+
+    form.addEventListener("submit", async function (event) {
+        event.preventDefault();
+        btn.disabled = true;
+        btn.textContent = "Submitting...";
+        feedback.textContent = "";
+        feedback.className = "small mt-3";
+
+        var payload = {
+            nickname: document.getElementById("nickname").value.trim(),
+            email: document.getElementById("email").value.trim(),
+            text: textInput.value.trim()
+        };
+
+        try {
+            var response = await fetch(url, {
+                method: "POST",
                 headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "X-CSRFToken": csrf
                 },
-                body: JSON.stringify(data)
-            })
-            .then(response => {
-                if (response.ok) {
-                    return response.json();
-                }
-                throw new Error('Network response was not ok.');
-            })
-            .then(newComment => {
-                const noComments = document.getElementById('no-comments');
-                if (noComments) noComments.remove();
-
-                const commentContainer = document.getElementById('comments-container');
-                const newDiv = document.createElement('div');
-                newDiv.className = 'comment-box';
-                newDiv.style = 'margin-bottom: 10px; border-bottom: 1px solid #ccc;';
-                
-                newDiv.innerHTML = `
-                    <strong>${data.nickname}</strong> <small>(Just now)</small>
-                    <p>${data.text}</p>
-                `;
-                
-                commentContainer.prepend(newDiv);
-
-                document.getElementById('comment-form').reset();
-                submitBtn.disabled = false;
-                submitBtn.innerText = "Submit Comment";
-                
-                alert("Comment added successfully!");
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert("Something went wrong. Check the console.");
-                submitBtn.disabled = false;
-                submitBtn.innerText = "Submit Comment";
+                body: JSON.stringify(payload)
             });
-        });
-    </script>
 
-</body>
-</html>
+            if (!response.ok) {
+                var errors = await response.json().catch(function () { return null; });
+                throw new Error(describeErrors(errors) || "please check the form and try again.");
+            }
+
+            var empty = document.getElementById("no-comments");
+            if (empty) empty.remove();
+
+            list.prepend(buildComment(payload.nickname, payload.text));
+            form.reset();
+            counter.textContent = "0";
+            feedback.classList.add("text-success");
+            feedback.textContent = "Thank you! Your comment has been added.";
+        } catch (error) {
+            feedback.classList.add("text-danger");
+            feedback.textContent = "Could not submit the comment: " + error.message;
+        } finally {
+            btn.disabled = false;
+            btn.textContent = "Submit comment";
+        }
+    });
+});
+</script>
+{% endblock %}

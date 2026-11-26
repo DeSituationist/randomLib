@@ -8,3 +8,4 @@ class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = ['nickname', 'email', 'text', 'published_at', 'book_title', 'book_slug']
+        extra_kwargs = {"email": {"write_only": True}}

@@ -9,7 +9,7 @@ from ..api.pagination import StandardBookPagination
 
 # Create your views here.
 class BooksListView(ListAPIView):
-    queryset = BookInfo.objects.filter(visible=True).prefetch_related('authors', 'genres')
+    queryset = BookInfo.objects.filter(visible=True).prefetch_related('authors', 'genres').order_by('-created')
     serializer_class = BookListSerializer
     pagination_class = StandardBookPagination
 

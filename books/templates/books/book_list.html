@@ -1,39 +1,69 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Library Catalog</title>
-</head>
-<body>
-    <h1>All Books</h1>
+{% extends 'books/base.html' %}
 
-    <div class="book-grid">
-        {% for book in books %}
-            <div class="book-card">
-                {% if book.cover %}
-                    <img src="{{ book.cover.url }}" alt="{{ book.title }}">
-                {% endif %}
-                
-                <h3><a href="{% url 'book-detail-html' book.slug %}">{{ book.title }}</a></h3>
-                
-                <p><em>{{ book.authors|join:", " }}</em></p>
-                <p>{{ book.published }}</p>
+{% block title %}All books — Library{% endblock %}
+
+{% block content %}
+<div class="page-head">
+    <div class="container py-4">
+        <h1 class="h2 mb-0">All books</h1>
+    </div>
+</div>
+
+<section class="py-5">
+    <div class="container">
+        {% if page_obj %}
+        <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-4">
+            {% for book in page_obj %}
+            <div class="col">
+                <article class="card book-card h-100">
+                    <div class="book-card__cover">
+                        {% if book.cover %}
+                            <img src="{{ book.cover.url }}" alt="{{ book.title }}" loading="lazy">
+                        {% else %}
+                            <span class="book-cover__placeholder" aria-hidden="true">{{ book.title|slice:":1" }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="card-body d-flex flex-column gap-2">
+                        <h2 class="h6 mb-0">
+                            <a href="{% url 'book_detail' book.slug %}" class="stretched-link text-body">{{ book.title }}</a>
+                        </h2>
+                        <p class="small text-muted mb-0">
+                            {% for author in book.authors.all %}{{ author.name }}{% if not forloop.last %}, {% endif %}{% empty %}Unknown author{% endfor %}
+                        </p>
+                        {% if book.published %}
+                            <p class="small text-muted mb-0">{{ book.published }}</p>
+                        {% endif %}
+                        <div class="d-flex flex-wrap gap-1 mt-auto pt-2">
+                            {% for genre in book.genres.all %}
+                                <span class="tag">{{ genre.name }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </article>
             </div>
-        {% empty %}
-            <p>No books found.</p>
-        {% endfor %}
-    </div>
-
-    <div class="pagination">
-        {% if page_obj.has_previous %}
-            <a href="?page={{ page_obj.previous_page_number }}">Previous</a>
+            {% endfor %}
+        </div>
+        {% else %}
+            <p class="text-muted mb-0">No books found.</p>
         {% endif %}
 
-        <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_other_pages %}
+        <nav class="pagination" aria-label="Pages">
+            {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}" class="page-link">← Previous</a>
+            {% else %}
+                <span class="page-link disabled" aria-disabled="true">← Previous</span>
+            {% endif %}
 
-        {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}">Next</a>
+            <span class="page-info">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}" class="page-link">Next →</a>
+            {% else %}
+                <span class="page-link disabled" aria-disabled="true">Next →</span>
+            {% endif %}
+        </nav>
         {% endif %}
     </div>
-
-</body>
-</html>
+</section>
+{% endblock %}

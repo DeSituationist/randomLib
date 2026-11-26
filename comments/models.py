@@ -13,3 +13,5 @@ class Comment(models.Model):
     class Meta:
         ordering = ['-published_at']
         indexes = [models.Index(fields=['-published_at'])]
+
+    def __str__(self): return f'{self.nickname}: {self.text[:30]}'
